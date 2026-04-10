@@ -172,6 +172,29 @@ Depois da montagem das janelas temporais:
 - `X_test  = (3192, 30, 6)`
 - `y_test  = (3192, 6)`
 
+### Como a janela desliza
+
+Um ponto importante: o modelo nao tenta prever "a segunda linha a partir da primeira linha isolada". O que ele faz e usar uma janela com 30 passos temporais e prever o passo seguinte inteiro.
+
+Didaticamente:
+
+```text
+[t1, t2, ..., t30] -> prever t31
+[t2, t3, ..., t31] -> prever t32
+[t3, t4, ..., t32] -> prever t33
+...
+```
+
+Cada `t` acima e um vetor com 6 features, nao um unico numero.
+
+Isso significa que:
+
+- a entrada de uma amostra tem formato `(30, 6)`
+- o alvo esperado daquela amostra tem formato `(6,)`
+- a janela anda de 1 em 1 ao longo da serie
+
+Em outras palavras, o modelo olha para os ultimos 30 instantes e tenta prever o instante imediatamente seguinte.
+
 ## Como a informacao passa pela rede
 
 Uma maneira didatica de pensar a rede e esta:
@@ -200,6 +223,37 @@ Ou seja:
 - a entrada e uma sequencia dos ultimos 30 instantes
 - a LSTM resume essa janela em um estado oculto
 - a camada linear transforma esse resumo em uma previsao para o proximo instante
+
+## O que a loss significa
+
+Neste projeto foi usada:
+
+```python
+criterion = nn.MSELoss()
+```
+
+Essa loss compara a saida predita com o alvo esperado e calcula o erro quadratico medio.
+
+No nosso caso:
+
+- `preds` tem shape `(batch_size, 6)`
+- `y_batch` tem shape `(batch_size, 6)`
+- a loss do batch e a media dos erros quadraticos de todas as 6 variaveis em todas as amostras do batch
+
+Em termos simples:
+
+```text
+loss = media de (predito - esperado)^2
+```
+
+Logo:
+
+- sim, a loss agrega o erro das 6 variaveis
+- e ela tambem agrega o erro de todas as amostras daquele batch
+- a `train_loss` mostrada na epoca e a media das losses de todos os batches da epoca
+- a `val_loss` faz o mesmo no conjunto de validacao
+
+Por isso, quando voce ve uma unica loss no treinamento, ela nao representa uma feature especifica. Ela representa um erro medio consolidado da previsao multivariada.
 
 ## Exemplo didatico de valor esperado vs valor predito
 
