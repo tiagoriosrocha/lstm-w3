@@ -288,21 +288,32 @@ O treino foi configurado com:
 
 Resultado observado:
 
-- melhor epoch de validacao: `23`
-- melhor `val_loss`: `0.066476`
-- epocas executadas: `30`
+- melhor epoch de validacao: `13`
+- melhor `val_loss`: `0.080535`
+- epocas executadas: `20`
 
 Isso significa que o treinamento nao ficou preso a um numero fixo de epocas. O modelo foi salvo no melhor ponto de validacao e o treino foi interrompido quando a validacao deixou de melhorar por varias rodadas.
 
 ## Resultados no teste
 
-Metricas globais no conjunto de teste:
+No notebook `4-teste.ipynb`, a avaliacao final comparou a LSTM com um baseline de persistencia. Esse baseline simplesmente usa o ultimo valor da janela como previsao do proximo instante, o que e uma referencia importante em series temporais.
+
+Metricas globais da LSTM no conjunto de teste:
 
 | Metrica | Valor |
 |---|---:|
-| `MSE`  | 0.428819 |
-| `RMSE` | 0.654842 |
-| `MAE`  | 0.475725 |
+| `MSE`  | 0.488696 |
+| `RMSE` | 0.699068 |
+| `MAE`  | 0.496597 |
+| `R2 medio` | -8.382136 |
+
+Para contexto, a persistencia ficou com:
+
+| Metrica | Valor |
+|---|---:|
+| `RMSE` | 0.051761 |
+| `MAE`  | 0.021016 |
+| `R2 medio` | 0.997779 |
 
 ### Erro por feature
 
@@ -310,12 +321,12 @@ As features mais dificeis e mais faceis para o modelo ficaram assim:
 
 | Feature | MAE | RMSE |
 |---|---:|---:|
-| `P-JUS-CKGL` | 1.215497 | 1.313882 |
-| `P-ANULAR`   | 0.577404 | 0.594144 |
-| `P-TPT`      | 0.458250 | 0.531194 |
-| `T-TPT`      | 0.331179 | 0.393002 |
-| `T-JUS-CKP`  | 0.148393 | 0.179450 |
-| `P-MON-CKP`  | 0.123623 | 0.157481 |
+| `P-JUS-CKGL` | 1.425022 | 1.442351 |
+| `P-ANULAR`   | 0.693201 | 0.730976 |
+| `P-TPT`      | 0.371232 | 0.434334 |
+| `T-TPT`      | 0.231099 | 0.260940 |
+| `T-JUS-CKP`  | 0.135711 | 0.175084 |
+| `P-MON-CKP`  | 0.123319 | 0.173461 |
 
 ## Analise dos resultados
 
@@ -325,14 +336,15 @@ As features mais dificeis e mais faceis para o modelo ficaram assim:
 - o pre-processamento eliminou ruido estrutural importante
 - a validacao melhorou ao longo do treino
 - o early stopping capturou um checkpoint melhor do que simplesmente usar o ultimo epoch
-- a rede conseguiu aprender alguma estrutura temporal real do problema
+- a rede conseguiu capturar parte da forma do sinal em algumas features, como `P-MON-CKP`
 
 ### O que ainda esta fraco
 
-- o erro no teste ainda e relativamente alto para algumas variaveis
+- a LSTM nao superou o baseline de persistencia no teste
+- o erro ficou muito alto nas variaveis `P-JUS-CKGL` e `P-ANULAR`
 - `P-JUS-CKGL` foi claramente a feature mais dificil de prever
-- o `MAE` global de `0.4757` em escala padronizada mostra que o baseline ainda esta longe de uma previsao "muito precisa"
-- o gap entre treino e validacao foi classificado no notebook como moderado, ou seja: o modelo melhorou, mas ainda ha espaco para refinamento
+- o `R2 medio` negativo mostra que, em termos globais, o modelo ficou pior do que uma referencia muito forte
+- os graficos de residuos mostram vies sistematico em varias features, e nao apenas ruido aleatorio pequeno
 
 ### Leitura pedagogica
 
@@ -348,7 +360,7 @@ Aqui, a maior melhora veio de:
 - escalar corretamente os dados
 - avaliar com divisao temporal correta
 
-So depois disso a LSTM passou a fazer sentido.
+So depois disso a LSTM passou a fazer sentido como experimento. A avaliacao final tambem mostrou outra licao importante: um modelo mais complexo precisa vencer um baseline simples antes de ser considerado uma boa solucao.
 
 ## Proximos passos recomendados
 
@@ -356,18 +368,14 @@ Se a ideia for evoluir este baseline, os proximos testes mais promissores sao:
 
 1. inverter o scaler para analisar erros nas unidades fisicas reais
 2. testar outros comprimentos de janela, como `15`, `60` ou `120`
-3. experimentar outro alvo:
-   - prever apenas uma variavel especifica
-   - prever varios passos a frente
-4. comparar com baselines simples:
-   - persistencia
-   - regressao linear
-   - MLP
-5. ajustar melhor a arquitetura:
+3. prever `delta` ou residuo em relacao a persistencia, em vez do valor absoluto
+4. experimentar modelos por feature ou por grupo de sensores
+5. comparar com outros baselines, como regressao linear, `MLP` e `GRU`
+6. ajustar melhor a arquitetura:
    - mais ou menos camadas
    - hidden size diferente
    - dropout diferente
-6. trabalhar com mais instancias do dataset, e nao apenas um unico arquivo
+7. trabalhar com mais instancias do dataset, e nao apenas um unico arquivo
 
 ## Conclusao
 
@@ -378,4 +386,4 @@ Os 4 notebooks constroem uma historia completa:
 - em seguida treinamos uma LSTM de forma correta
 - por fim avaliamos o que ela realmente conseguiu aprender
 
-Como baseline didatico, o projeto foi bem-sucedido: ele mostra claramente a passagem do dado bruto para a previsao temporal. Como solucao final de negocio, ainda ha espaco para melhorar bastante, principalmente na precisao de algumas features e na interpretacao dos erros em unidades reais.
+Como material didatico, o projeto foi bem-sucedido: ele mostra claramente a passagem do dado bruto para a previsao temporal e, no notebook 4, deixa evidente como interpretar um resultado fraco de forma correta. Como solucao final, ainda ha espaco para melhorar bastante, principalmente para superar a persistencia e reduzir o vies sistematico nas features mais dificeis.
