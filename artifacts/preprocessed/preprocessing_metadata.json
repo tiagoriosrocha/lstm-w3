@@ -1,0 +1,63 @@
+{
+  "source_file": "/Users/tiagoriosdarocha/Desktop/lstm-w3/3W/dataset/0/WELL-00001_20170201010207.parquet",
+  "dropped_all_null_columns": [
+    "ABER-CKGL",
+    "ABER-CKP",
+    "P-JUS-BS",
+    "P-JUS-CKP",
+    "P-MON-CKGL",
+    "P-MON-SDV-P",
+    "PT-P",
+    "QBS",
+    "T-MON-CKP"
+  ],
+  "dropped_constant_columns": [
+    "P-PDG",
+    "QGL",
+    "T-PDG",
+    "ESTADO-DHSV",
+    "ESTADO-M1",
+    "ESTADO-M2",
+    "ESTADO-PXO",
+    "ESTADO-SDV-GL",
+    "ESTADO-SDV-P",
+    "ESTADO-W1",
+    "ESTADO-W2",
+    "ESTADO-XO"
+  ],
+  "state_columns": [
+    "ESTADO-DHSV",
+    "ESTADO-M1",
+    "ESTADO-M2",
+    "ESTADO-PXO",
+    "ESTADO-SDV-GL",
+    "ESTADO-SDV-P",
+    "ESTADO-W1",
+    "ESTADO-W2",
+    "ESTADO-XO"
+  ],
+  "analog_columns": [
+    "P-ANULAR",
+    "P-JUS-CKGL",
+    "P-MON-CKP",
+    "P-PDG",
+    "P-TPT",
+    "QGL",
+    "T-JUS-CKP",
+    "T-PDG",
+    "T-TPT"
+  ],
+  "final_feature_columns": [
+    "P-ANULAR",
+    "P-JUS-CKGL",
+    "P-MON-CKP",
+    "P-TPT",
+    "T-JUS-CKP",
+    "T-TPT"
+  ],
+  "rows": {
+    "train": 15031,
+    "validation": 3221,
+    "test": 3222
+  }
+}
