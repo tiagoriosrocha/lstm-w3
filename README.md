@@ -1,389 +1,59 @@
-# Projeto LSTM com Dataset 3W
+# Projeto 3W com Versionamento de Experimentos
 
 ## Visao geral
 
-Este projeto mostra um pipeline completo de series temporais com o dataset 3W da Petrobras:
-
-1. entender os dados
-2. limpar e preparar as variaveis
-3. treinar uma rede LSTM
-4. avaliar o desempenho no conjunto de teste
-
-O foco aqui nao foi apenas "rodar um modelo", mas construir uma esteira didatica e reprodutivel, separando cada etapa em um notebook diferente.
-
-## Estrutura dos notebooks
-
-- `1-visao-geral-dos-dados.ipynb`
-  - faz a leitura da instancia escolhida do dataset
-  - mostra `head`, `info`, estatisticas, nulos e visualizacoes
-- `2-pre-processamento.ipynb`
-  - remove colunas inviaveis
-  - separa sinais analogicos e sinais de estado
-  - trata faltantes
-  - divide em treino, validacao e teste
-  - gera dados escalados e salva artefatos
-- `3-treino-validacao.ipynb`
-  - monta sequencias temporais
-  - cria a LSTM
-  - treina com early stopping
-  - salva o melhor checkpoint
-- `4-teste.ipynb`
-  - carrega o melhor modelo salvo
-  - avalia no conjunto de teste
-  - calcula metricas globais e por feature
-
-## Dataset utilizado
-
-Foi usada uma instancia local do clone do repositorio oficial `3W`, no arquivo:
-
-`3W/dataset/0/WELL-00001_20170201010207.parquet`
-
-Resumo da instancia analisada:
-
-- 21.474 observacoes
-- 29 colunas na leitura bruta
-- periodo: `2017-02-01 01:02:07` ate `2017-02-01 07:00:00`
-
-## Como os dados chegam
-
-No dado bruto, existem sensores analogicos, variaveis de estado e labels. Um exemplo real da primeira linha lida foi:
-
-```text
-timestamp    = 2017-02-01 01:02:07
-ESTADO-DHSV  = 1.0
-P-ANULAR     = 12767730.0
-P-JUS-CKGL   = 1563422.0
-P-MON-CKP    = 1627884.0
-P-PDG        = 0.0
-P-TPT        = 10074540.0
-QGL          = 0.0
-T-JUS-CKP    = 84.64463
-T-PDG        = 0.0
-T-TPT        = 119.0781
-class        = NaN
-state        = NaN
-```
+Este repositorio esta organizado para preservar o historico de desenvolvimento em duas etapas separadas:
 
-Esse exemplo ja mostra algo importante: o dataset nao chega "pronto para modelagem". Ha colunas vazias, colunas constantes e labels ausentes em parte da serie.
+- `versao1/`
+- `versao2/`
 
-## O que a exploracao mostrou
+A ideia e simples:
 
-Durante a EDA, apareceram alguns pontos centrais:
+- `versao1` guarda o primeiro pipeline, mais basico e didatico
+- `versao2` guarda a iteracao seguinte, com melhorias de pre-processamento, arquitetura e avaliacao
 
-- 9 colunas estavam 100% nulas:
-  - `ABER-CKGL`, `ABER-CKP`, `P-JUS-BS`, `P-JUS-CKP`, `P-MON-CKGL`, `P-MON-SDV-P`, `PT-P`, `QBS`, `T-MON-CKP`
-- `class` e `state` tinham 3.600 valores ausentes cada, cerca de `16,76%`
-- varias colunas eram constantes ou quase triviais nessa instancia
-- algumas variaveis como `P-PDG`, `QGL` e `T-PDG` nao traziam variacao util para esse experimento
+Assim, voce consegue evoluir o projeto sem sobrescrever aquilo que aprendeu nas versoes anteriores.
 
-Em outras palavras: o primeiro ganho do projeto veio muito mais da limpeza correta dos dados do que de qualquer truque na rede.
+## Estrutura da raiz
 
-## Como foi feito o pre-processamento
+- `3W/`
+  - clone local do dataset 3W
+  - fica apenas na pasta raiz
+- `versao1/`
+  - notebooks e `README` da primeira versao
+  - possui seu proprio diretorio `artifacts/`
+- `versao2/`
+  - notebooks, `README` e codigo auxiliar da segunda versao
+  - possui seu proprio diretorio `artifacts/`
 
-O notebook `2-pre-processamento.ipynb` aplicou a seguinte logica:
+## Como usar
 
-1. remover colunas 100% nulas
-2. remover labels e colunas auxiliares das features
-3. separar sinais de estado/binarios de sinais analogicos
-4. interpolar apenas os sinais analogicos
-5. usar `ffill` e `bfill` para completar faltantes residuais
-6. remover colunas constantes apos a limpeza
-7. dividir a serie temporal sem embaralhar
-8. gerar tres versoes escaladas:
-   - `MinMaxScaler`
-   - `StandardScaler`
-   - `RobustScaler`
+Fluxo recomendado:
 
-### Features finais
+1. manter o dataset apenas em `3W/`
+2. executar os notebooks sempre de dentro da versao desejada
+3. deixar os resultados gerados em `versao1/artifacts/` ou `versao2/artifacts/`
 
-Depois da limpeza, restaram apenas 6 features realmente usadas no modelo:
+Isso evita mistura entre artefatos de experimentos diferentes.
 
-- `P-ANULAR`
-- `P-JUS-CKGL`
-- `P-MON-CKP`
-- `P-TPT`
-- `T-JUS-CKP`
-- `T-TPT`
+## Sobre o `.gitignore`
 
-Resultado da limpeza:
+O repositório ignora:
 
-- shape final: `(21474, 6)`
-- valores nulos restantes: `0`
+- `3W/`
+- `versao1/artifacts/`
+- `versao2/artifacts/`
 
-### Exemplo didatico de transformacao
+Com isso, o Git guarda o codigo, os notebooks e a documentacao, mas nao versiona:
 
-A mesma primeira linha, depois da limpeza, ficou assim:
+- o clone bruto do dataset
+- arquivos pesados de pre-processamento
+- checkpoints de modelos
+- saidas intermediarias
 
-```text
-P-ANULAR    = 12767730.0
-P-JUS-CKGL  = 1563422.0
-P-MON-CKP   = 1627884.0
-P-TPT       = 10074540.0
-T-JUS-CKP   = 84.64463
-T-TPT       = 119.0781
-```
+## Documentacao das versoes
 
-Depois do `StandardScaler`, essa observacao passou a ser representada por valores normalizados:
+Para detalhes de cada experimento, veja:
 
-```text
-P-ANULAR    =  1.997102
-P-JUS-CKGL  = -1.731634
-P-MON-CKP   =  0.273858
-P-TPT       =  0.495554
-T-JUS-CKP   =  0.771591
-T-TPT       =  0.714380
-```
-
-Isso e importante porque a LSTM treina melhor quando as variaveis estao em uma escala mais comparavel.
-
-## Divisao temporal
-
-A divisao respeitou a ordem cronologica:
-
-- treino: `15.031` linhas
-- validacao: `3.221` linhas
-- teste: `3.222` linhas
-
-Sem embaralhamento. Em serie temporal isso e obrigatorio para evitar vazamento de informacao do futuro para o passado.
-
-## Como a rede foi montada
-
-A rede usada foi uma `LSTMForecaster` com:
-
-- entrada com `6` features por passo temporal
-- `sequence_length = 30`
-- `hidden_size = 64`
-- `num_layers = 2`
-- `dropout = 0.2`
-- camada final `Linear(64 -> 6)`
-
-Quantidade total de parametros:
-
-- `52.102` parametros treinaveis
-
-### Formato dos tensores
-
-Depois da montagem das janelas temporais:
-
-- `X_train = (15001, 30, 6)`
-- `y_train = (15001, 6)`
-- `X_val   = (3191, 30, 6)`
-- `y_val   = (3191, 6)`
-- `X_test  = (3192, 30, 6)`
-- `y_test  = (3192, 6)`
-
-### Como a janela desliza
-
-Um ponto importante: o modelo nao tenta prever "a segunda linha a partir da primeira linha isolada". O que ele faz e usar uma janela com 30 passos temporais e prever o passo seguinte inteiro.
-
-Didaticamente:
-
-```text
-[t1, t2, ..., t30] -> prever t31
-[t2, t3, ..., t31] -> prever t32
-[t3, t4, ..., t32] -> prever t33
-...
-```
-
-Cada `t` acima e um vetor com 6 features, nao um unico numero.
-
-Isso significa que:
-
-- a entrada de uma amostra tem formato `(30, 6)`
-- o alvo esperado daquela amostra tem formato `(6,)`
-- a janela anda de 1 em 1 ao longo da serie
-
-Em outras palavras, o modelo olha para os ultimos 30 instantes e tenta prever o instante imediatamente seguinte.
-
-## Como a informacao passa pela rede
-
-Uma maneira didatica de pensar a rede e esta:
-
-```text
-Janela de 30 passos x 6 features
-        |
-        v
-LSTM camada 1
-        |
-        v
-LSTM camada 2
-        |
-        v
-Ultimo estado oculto da janela (vetor de tamanho 64)
-        |
-        v
-Camada linear 64 -> 6
-        |
-        v
-Predicao da proxima observacao multivariada
-```
-
-Ou seja:
-
-- a entrada e uma sequencia dos ultimos 30 instantes
-- a LSTM resume essa janela em um estado oculto
-- a camada linear transforma esse resumo em uma previsao para o proximo instante
-
-## O que a loss significa
-
-Neste projeto foi usada:
-
-```python
-criterion = nn.MSELoss()
-```
-
-Essa loss compara a saida predita com o alvo esperado e calcula o erro quadratico medio.
-
-No nosso caso:
-
-- `preds` tem shape `(batch_size, 6)`
-- `y_batch` tem shape `(batch_size, 6)`
-- a loss do batch e a media dos erros quadraticos de todas as 6 variaveis em todas as amostras do batch
-
-Em termos simples:
-
-```text
-loss = media de (predito - esperado)^2
-```
-
-Logo:
-
-- sim, a loss agrega o erro das 6 variaveis
-- e ela tambem agrega o erro de todas as amostras daquele batch
-- a `train_loss` mostrada na epoca e a media das losses de todos os batches da epoca
-- a `val_loss` faz o mesmo no conjunto de validacao
-
-Por isso, quando voce ve uma unica loss no treinamento, ela nao representa uma feature especifica. Ela representa um erro medio consolidado da previsao multivariada.
-
-## Exemplo didatico de valor esperado vs valor predito
-
-No conjunto de teste, para a primeira janela avaliada, o proximo timestamp previsto foi:
-
-`2017-02-01 06:06:49`
-
-Os valores abaixo estao na escala padronizada (`StandardScaler`), nao nas unidades fisicas originais.
-
-| Feature | Esperado | Predito | Erro absoluto |
-|---|---:|---:|---:|
-| `P-ANULAR` | -1.144632 | -1.778522 | 0.633890 |
-| `P-JUS-CKGL` | 2.481718 | 2.107269 | 0.374449 |
-| `P-MON-CKP` | 0.215236 | 0.258580 | 0.043344 |
-| `P-TPT` | 0.422314 | 0.174464 | 0.247850 |
-| `T-JUS-CKP` | -0.484902 | -0.616885 | 0.131983 |
-| `T-TPT` | -0.416548 | 0.018804 | 0.435353 |
-
-Interpretacao:
-
-- em algumas variaveis o modelo chegou relativamente perto, como `P-MON-CKP`
-- em outras, o erro foi maior, como `P-ANULAR` e `T-TPT`
-- isso mostra que a rede aprendeu parte da dinamica, mas ainda nao modela todas as variacoes com a mesma qualidade
-
-## Treino e validacao
-
-O treino foi configurado com:
-
-- `MAX_EPOCHS = 50`
-- `PATIENCE = 7`
-- `early stopping`
-
-Resultado observado:
-
-- melhor epoch de validacao: `13`
-- melhor `val_loss`: `0.080535`
-- epocas executadas: `20`
-
-Isso significa que o treinamento nao ficou preso a um numero fixo de epocas. O modelo foi salvo no melhor ponto de validacao e o treino foi interrompido quando a validacao deixou de melhorar por varias rodadas.
-
-## Resultados no teste
-
-No notebook `4-teste.ipynb`, a avaliacao final comparou a LSTM com um baseline de persistencia. Esse baseline simplesmente usa o ultimo valor da janela como previsao do proximo instante, o que e uma referencia importante em series temporais.
-
-Metricas globais da LSTM no conjunto de teste:
-
-| Metrica | Valor |
-|---|---:|
-| `MSE`  | 0.488696 |
-| `RMSE` | 0.699068 |
-| `MAE`  | 0.496597 |
-| `R2 medio` | -8.382136 |
-
-Para contexto, a persistencia ficou com:
-
-| Metrica | Valor |
-|---|---:|
-| `RMSE` | 0.051761 |
-| `MAE`  | 0.021016 |
-| `R2 medio` | 0.997779 |
-
-### Erro por feature
-
-As features mais dificeis e mais faceis para o modelo ficaram assim:
-
-| Feature | MAE | RMSE |
-|---|---:|---:|
-| `P-JUS-CKGL` | 1.425022 | 1.442351 |
-| `P-ANULAR`   | 0.693201 | 0.730976 |
-| `P-TPT`      | 0.371232 | 0.434334 |
-| `T-TPT`      | 0.231099 | 0.260940 |
-| `T-JUS-CKP`  | 0.135711 | 0.175084 |
-| `P-MON-CKP`  | 0.123319 | 0.173461 |
-
-## Analise dos resultados
-
-### O que foi bom
-
-- o pipeline ficou limpo e bem separado em etapas
-- o pre-processamento eliminou ruido estrutural importante
-- a validacao melhorou ao longo do treino
-- o early stopping capturou um checkpoint melhor do que simplesmente usar o ultimo epoch
-- a rede conseguiu capturar parte da forma do sinal em algumas features, como `P-MON-CKP`
-
-### O que ainda esta fraco
-
-- a LSTM nao superou o baseline de persistencia no teste
-- o erro ficou muito alto nas variaveis `P-JUS-CKGL` e `P-ANULAR`
-- `P-JUS-CKGL` foi claramente a feature mais dificil de prever
-- o `R2 medio` negativo mostra que, em termos globais, o modelo ficou pior do que uma referencia muito forte
-- os graficos de residuos mostram vies sistematico em varias features, e nao apenas ruido aleatorio pequeno
-
-### Leitura pedagogica
-
-Este projeto mostra um ponto essencial de data science:
-
-> um modelo razoavel em dados bem preparados costuma ensinar mais do que um modelo sofisticado em dados mal tratados
-
-Aqui, a maior melhora veio de:
-
-- remover colunas totalmente vazias
-- remover colunas constantes
-- separar variaveis analogicas de sinais de estado
-- escalar corretamente os dados
-- avaliar com divisao temporal correta
-
-So depois disso a LSTM passou a fazer sentido como experimento. A avaliacao final tambem mostrou outra licao importante: um modelo mais complexo precisa vencer um baseline simples antes de ser considerado uma boa solucao.
-
-## Proximos passos recomendados
-
-Se a ideia for evoluir este baseline, os proximos testes mais promissores sao:
-
-1. inverter o scaler para analisar erros nas unidades fisicas reais
-2. testar outros comprimentos de janela, como `15`, `60` ou `120`
-3. prever `delta` ou residuo em relacao a persistencia, em vez do valor absoluto
-4. experimentar modelos por feature ou por grupo de sensores
-5. comparar com outros baselines, como regressao linear, `MLP` e `GRU`
-6. ajustar melhor a arquitetura:
-   - mais ou menos camadas
-   - hidden size diferente
-   - dropout diferente
-7. trabalhar com mais instancias do dataset, e nao apenas um unico arquivo
-
-## Conclusao
-
-Os 4 notebooks constroem uma historia completa:
-
-- primeiro entendemos o dado
-- depois limpamos e organizamos o problema
-- em seguida treinamos uma LSTM de forma correta
-- por fim avaliamos o que ela realmente conseguiu aprender
-
-Como material didatico, o projeto foi bem-sucedido: ele mostra claramente a passagem do dado bruto para a previsao temporal e, no notebook 4, deixa evidente como interpretar um resultado fraco de forma correta. Como solucao final, ainda ha espaco para melhorar bastante, principalmente para superar a persistencia e reduzir o vies sistematico nas features mais dificeis.
+- [versao1/README.md](/Users/tiagoriosdarocha/Desktop/lstm-w3/versao1/README.md)
+- [versao2/README.md](/Users/tiagoriosdarocha/Desktop/lstm-w3/versao2/README.md)

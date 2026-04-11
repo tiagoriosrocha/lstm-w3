@@ -1,0 +1,20 @@
+#Dependencias Python do projeto
+numpy>=1.26,<3
+pandas>=2.2,<3
+matplotlib>=3.8,<4
+scikit-learn>=1.4,<2
+pyarrow>=15,<20
+tqdm>=4.66,<5
+jupyterlab>=4,<5
+notebook>=7,<8
+ipykernel>=6.29,<7
+
+#PyTorch
+#Se quiser forcar CPU no Linux/Windows, pode instalar manualmente conforme a documentacao oficial:
+#https://pytorch.org/get-started/locally/
+torch>=2.2,<3
+
+#Observacao importante:
+#O repositorio 3W e um dataset Git, nao um pacote Python instalavel via pip.
+#Por isso, o clone do dataset deve ser feito separadamente com:
+#git clone https://github.com/petrobras/3W.git
