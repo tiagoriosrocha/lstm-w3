@@ -7,7 +7,7 @@
   "scaler_name": "standard",
   "max_epochs": 50,
   "patience": 7,
-  "best_epoch": 13,
-  "best_val_loss": 0.08053534757345915,
-  "executed_epochs": 20
+  "best_epoch": 19,
+  "best_val_loss": 0.060792410969734194,
+  "executed_epochs": 26
 }

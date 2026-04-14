@@ -1,3 +1,7 @@
 3W/
+artifacts/
 versao1/artifacts/
 versao2/artifacts/
+.codex
+.venv/
+__pycache__/

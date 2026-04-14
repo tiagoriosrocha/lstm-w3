@@ -1,5 +1,5 @@
 {
-  "source_file": "/Users/tiagoriosdarocha/Desktop/lstm-w3/3W/dataset/0/WELL-00001_20170201010207.parquet",
+  "source_file": "/home/tiagoriosrocha/Desktop/lstm-w3/3W/dataset/0/WELL-00001_20170201010207.parquet",
   "dropped_all_null_columns": [
     "ABER-CKGL",
     "ABER-CKP",
