@@ -1,0 +1,54 @@
+termo,categoria,definicao_academica,relacao_com_o_projeto
+MAE,metrica,Erro absoluto medio entre valores previstos e observados.,Mede erro medio sem amplificar discrepancias extremas.
+MSE,metrica,Erro quadratico medio entre previsao e referencia.,Penaliza fortemente erros de grande magnitude.
+RMSE,metrica,Raiz quadrada do MSE.,Retorna o erro em escala comparavel a unidade original da variavel.
+R2,metrica,Coeficiente de determinacao.,Indica a fracao da variabilidade explicada pelo modelo.
+baseline,avaliacao,Metodo de referencia usado como padrao minimo de comparacao.,"Neste projeto, a baseline principal e a persistencia."
+persistencia,avaliacao,Estrategia que projeta o ultimo valor observado para o horizonte futuro.,Serve como referencia forte em series de curta memoria.
+janela deslizante,series_temporais,Subsequencia temporal usada como entrada do modelo.,A janela resume o contexto recente para prever o futuro imediato.
+horizonte de previsao,series_temporais,Numero de passos futuros previstos por amostra.,"Na configuracao recomendada da versao5, o horizonte e multi-step."
+serie temporal multivariada,series_temporais,Sequencia cronologica composta por varias variaveis observadas simultaneamente.,"O 3W fornece sinais de pressao, temperatura, vazao e estados operacionais."
+split temporal,series_temporais,Particao treino-validacao-teste que preserva a ordem cronologica.,Evita vazamento de informacao futura.
+data leakage,series_temporais,Uso inadvertido de informacao futura ou externa durante o treinamento.,Compromete a validade da avaliacao experimental.
+outlier,pre_processamento,Observacao extrema em relacao ao comportamento dominante dos dados.,Pode distorcer escalonamento e treinamento.
+interpolacao,pre_processamento,Estimativa de valores faltantes com base em observacoes vizinhas.,Foi usada nas variaveis analogicas continuas.
+forward fill,pre_processamento,Preenchimento de ausencias com o ultimo valor valido observado.,Apropriado para sinais de estado quase discretos.
+robust scaler,pre_processamento,Escalonador baseado em mediana e intervalo interquartil.,Reduz sensibilidade a amplitudes extremas.
+feature engineering,pre_processamento,Construcao de atributos derivados para ampliar a capacidade descritiva dos dados.,"As features diff1, dev_roll e std_roll sao exemplos."
+diff1,pre_processamento,Primeira diferenca temporal.,Aproxima a derivada discreta do sinal.
+rolling mean,pre_processamento,Media movel calculada em uma janela finita.,Resume tendencia local.
+rolling standard deviation,pre_processamento,Desvio-padrao movel.,Resume variabilidade local.
+desvio local,pre_processamento,Diferenca entre a observacao atual e sua media movel.,Quantifica afastamento do comportamento recente.
+batch,otimizacao,Conjunto de amostras processadas conjuntamente em cada iteracao.,Equilibra custo computacional e estabilidade do gradiente.
+epoch,otimizacao,Passagem completa do algoritmo sobre o conjunto amostrado de treinamento.,Usada para monitorar convergencia.
+learning rate,otimizacao,Passo de atualizacao dos parametros durante a descida de gradiente.,Valores inadequados podem causar divergencia ou lentidao.
+weight decay,otimizacao,Penalizacao L2 aplicada aos parametros.,Auxilia no controle de sobreajuste.
+early stopping,otimizacao,Interrupcao do treino quando a validacao deixa de melhorar.,Evita overfitting e reduz custo computacional.
+gradient clipping,otimizacao,Limitacao da norma do gradiente.,Importante para estabilidade em redes recorrentes.
+dropout,regularizacao,Desativacao aleatoria de unidades durante o treino.,Reduz coadaptacao excessiva entre neuronios.
+overfitting,regularizacao,Ajuste excessivo aos dados de treino com perda de generalizacao.,Sinaliza baixa robustez fora da amostra.
+generalizacao,regularizacao,Capacidade do modelo de manter desempenho em dados nao vistos.,E o objetivo central da avaliacao em teste.
+loss,otimizacao,Funcao objetivo minimizada durante o treinamento.,Resume o erro de previsao em uma quantidade escalar.
+Smooth L1,otimizacao,Funcao de perda robusta que combina propriedades de L1 e L2.,Mitiga a influencia de outliers sem ignorar a magnitude dos erros.
+RNN,redes_recorrentes,Rede neural recorrente para modelagem sequencial.,Familia arquitetural base para LSTM e GRU.
+LSTM,redes_recorrentes,"Long Short-Term Memory, arquitetura recorrente com portas de memoria.",Adequada para dependencias temporais de medio e longo alcance.
+GRU,redes_recorrentes,"Gated Recurrent Unit, variante recorrente mais compacta que a LSTM.",Empregada no modelo hibrido residual.
+hidden state,redes_recorrentes,Estado latente que resume informacao processada ate um dado passo temporal.,Transporta memoria dinamica ao longo da sequencia.
+embedding,redes_recorrentes,Representacao vetorial densa de uma categoria discreta.,"Na versao5, o poco e representado por embedding."
+attention,redes_recorrentes,Mecanismo que pondera a relevancia relativa dos passos da sequencia.,Permite concentrar o modelo em trechos mais informativos.
+bidirectional,redes_recorrentes,Processamento recorrente nos sentidos temporal direto e reverso.,Expande a capacidade de sumarizacao contextual dentro da janela.
+aprendizado residual,redes_recorrentes,Estrategia em que a rede aprende um delta sobre uma referencia simples.,A previsao final corrige a baseline de persistencia.
+convolucao temporal,redes_recorrentes,Operacao convolucional aplicada ao eixo temporal.,Capta padroes locais e regularidades de curta duracao.
+streaming inference,avaliacao,"Inferencia feita em fluxo, sem materializar toda a matriz de previsoes simultaneamente.",Viabiliza avaliacao em larga escala com menor uso de memoria.
+token,pln,Unidade elementar de texto apos segmentacao.,"Termo central em PLN, embora nao seja usado diretamente neste projeto de series temporais."
+tokenizacao,pln,Processo de segmentar texto em tokens.,Etapa fundamental em pipelines de linguagem natural.
+vocabulario,pln,Conjunto de tokens conhecidos por um modelo.,Define o espaco discreto de simbolos manipulados em PLN.
+OOV,pln,Out-of-vocabulary; token ausente do vocabulario conhecido.,Pode degradar a cobertura lexical de um modelo de linguagem.
+padding,pln,Insercao de simbolos de preenchimento para igualar comprimentos.,Analogo ao alinhamento de sequencias de tamanhos distintos.
+truncation,pln,Corte de parte da sequencia para respeitar comprimento maximo.,Afeta a quantidade de contexto fornecida ao modelo.
+self-attention,pln,Mecanismo em que cada posicao da sequencia pondera as demais posicoes.,Base dos Transformers modernos.
+Transformer,pln,Arquitetura sequencial baseada predominantemente em atencao.,Popular em PLN e cada vez mais adotada em series temporais.
+seq2seq,pln,Arquitetura de sequencia-para-sequencia.,Relaciona uma sequencia de entrada a uma sequencia de saida.
+corpus,pln,Colecao estruturada de textos usada em treinamento ou avaliacao.,"Equivale, por analogia, a um conjunto de series em estudos temporais."
+modelo de linguagem,pln,Modelo probabilistico ou neural que estima distribuicoes sobre sequencias de texto.,"Nao e o foco deste projeto, mas compartilha principios de modelagem sequencial."
+perplexidade,pln,Metrica de incerteza comum em modelos de linguagem.,"Quanto menor, maior a capacidade do modelo de antecipar a sequencia textual."
