@@ -26,7 +26,7 @@ Resumo dos resultados mais importantes em teste:
 | `versao8` | `LSTM explicita` | `0.9104` | `0.8964` | `0.9191` | Reproduziu exatamente a `versao7`, com mais transparencia metodologica |
 | `versao9` | `LSTM hibrida hierarquica` | `0.9224` | `0.9268` | `0.9415` | Melhorou fortemente sobre a `versao8`, mas ainda ficou abaixo das baselines |
 | `versao10` | `LSTM multitarefa sensivel a fonte` | `0.9373` | `0.9409` | `0.9572` | Melhor LSTM do projeto em `macro-F1` e `balanced accuracy`, mas ainda abaixo das baselines |
-| `versao11` | `Mesma LSTM multitarefa com filtro por state e features vazias removidas` | `-` | `-` | `-` | Preparada para medir o efeito de treinar as falhas apenas com estados transientes e de falha |
+| `versao11` | `LSTM multitarefa com filtro por state e remocao de features vazias` | `1.0000` | `1.0000` | `1.0000` | Execucao correta, mas em tarefa reduzida as classes `0` e `8`; nao comparavel diretamente com a `versao10` |
 
 Conclusao atual:
 
@@ -38,6 +38,7 @@ Conclusao atual:
 - o experimento da `versao7` e sua reproducao na `versao8` continuam valiosos, porque mostram que **aumentar profundidade, por si so, nao garantiu melhoria**.
 - a `versao10` confirmou essa direcao metodologica: ganhou `0.0149` em `accuracy`, `0.0140` em `macro-F1` e `0.0157` em `balanced accuracy` sobre a `versao9`;
 - em relacao a melhor `LSTM` anterior da `versao6`, a `versao10` perdeu pouco em `accuracy`, mas virou a melhor rede recorrente do projeto em `macro-F1` e `balanced accuracy`;
+- a `versao11` executou sem erro, mas o filtro atual por `state` preservou apenas as classes `0` e `8`, o que explica os resultados perfeitos e impede comparacao direta com a tarefa multiclasse completa;
 - mesmo assim, o melhor modelo global continua sendo a baseline tabular, especialmente o `RandomForest`.
 
 ## Estrutura do repositorio
@@ -67,7 +68,7 @@ Conclusao atual:
 - `versao10/`
   proposta de `LSTM` multitarefa e sensivel a fonte, incorporando `27` variaveis, rotulos por observacao e mascaras operacionais.
 - `versao11/`
-  reproducao controlada da `versao10`, mantendo o mesmo modelo e os mesmos atributos, mas removendo features totalmente vazias e filtrando o treino das classes `1..9` para manter apenas observacoes com `state` transiente ou de falha.
+  ablacao de pre-processamento sobre a `versao10`, removendo `9` features totalmente vazias e filtrando o treino das classes `1..9` para manter apenas observacoes com `state` transiente ou de falha.
 
 ## Como executar
 
@@ -152,6 +153,7 @@ Alguns pontos importantes do historico experimental:
 - a `versao10` nasce exatamente dessa leitura do artigo e tenta transformar essas pistas em componentes concretos do modelo;
 - os resultados da `versao10` reforcam que essa leitura estava correta, pois houve ganho real sobre a `versao9` e sobre as LSTMs anteriores em duas metricas centrais;
 - a `versao11` foi desenhada como um experimento de ablacao: ela nao muda a arquitetura da `versao10`, mas muda o pre-processamento para medir com mais clareza o impacto de remover features vazias e filtrar o treino das falhas pelo `state` observacional;
+- na execucao atual, esse filtro ficou muito severo e preservou apenas as classes `0` e `8`, o que torna a `versao11` util como ablacao, mas nao como substituta direta da `versao10`;
 - portanto, o melhor modelo do projeto continua sendo a baseline classica, e isso deve ser tratado como um achado tecnico legitimo, nao como uma falha do experimento.
 
 ## Documentacao por versao

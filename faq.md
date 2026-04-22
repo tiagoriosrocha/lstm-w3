@@ -667,11 +667,11 @@ Nos artefatos atuais, de `2228` series originais, `605` foram mantidas. O `split
 **203. Por que isso exige cuidado ao interpretar a versao 11?**  
 Porque, nesse estado atual, a `versao11` deixou de ser diretamente comparavel ao problema multiclasse mais amplo das versoes anteriores. Na pratica, os artefatos atuais ficaram muito mais proximos de um problema reduzido do que da tarefa original de `10` classes.
 
-**204. Quais numeros foram registrados na rodada exploratoria documentada da versao 11?**  
-Na rodada documentada em `readme` e nos outputs salvos dos notebooks, a `LSTM` da `versao11` registrou, em validacao, `accuracy = 0.8851`, `macro-F1 = 0.8724` e `balanced accuracy = 0.8921`; em teste, `accuracy = 0.9213`, `macro-F1 = 0.9155` e `balanced accuracy = 0.9225`. Nessa mesma rodada, o `RandomForest` em teste ficou com `accuracy = 0.9888`, `macro-F1 = 0.9833` e `balanced accuracy = 0.9750`.
+**204. Quais sao os resultados atuais da versao 11?**  
+Na execucao atual, a `LSTM` da `versao11` ficou com `accuracy = 1.0000`, `macro-F1 = 1.0000` e `balanced accuracy = 1.0000` tanto em validacao quanto em teste. No mesmo teste, `RandomForest` e `LGBM` tambem ficaram com `1.0000`, enquanto o `XGBoost` ficou com `accuracy = 0.9891`, `macro-F1 = 0.8972` e `balanced accuracy = 0.9944`.
 
-**205. Como esses numeros da rodada exploratoria da versao 11 se comparam com a versao 10?**  
-Eles ficaram abaixo da `versao10` em `0.0160` de `accuracy`, `0.0253` de `macro-F1` e `0.0347` de `balanced accuracy`. Ou seja, a ablacao nao melhorou a melhor rede recorrente do projeto.
+**205. Isso quer dizer que a versao 11 virou a melhor versao do projeto?**  
+Nao. Esses resultados perfeitos aconteceram porque o pre-processamento atual preservou apenas as classes `0` e `8`. Entao a tarefa ficou muito mais simples e deixou de ser diretamente comparavel ao problema multiclasse mais amplo das versoes anteriores.
 
 **206. Qual e a leitura metodologica mais honesta sobre a versao 11?**  
-Que ela foi util como experimento de ablacao e mostrou a alta sensibilidade do projeto ao pre-processamento. Na rodada documentada, ela piorou em relacao a `versao10`; no estado atual dos artefatos, o filtro ficou tao severo que uma nova rodada completa de treino seria necessaria antes de usar a `versao11` como comparacao final consolidada.
+Que ela foi util como experimento de ablacao e mostrou a alta sensibilidade do projeto ao pre-processamento. A execucao atual esta tecnicamente correta, mas o filtro por `state` ficou tao severo que a `versao11` deve ser interpretada como uma tarefa reduzida, e nao como substituta direta da `versao10`.

@@ -79,10 +79,12 @@ Leitura curta do historico experimental:
 | `versao10` | `LSTM multitarefa sensivel a fonte` | `0.9373` | `0.9409` | `0.9572` | melhor rede recorrente do projeto em `macro-F1` e `balanced accuracy` |
 | `versao10` | `RandomForest` | `0.9851` | `0.9811` | `0.9744` | melhor modelo global ainda |
 | `versao10` | `XGBoost` | `0.9791` | `0.9775` | `0.9714` | segunda melhor baseline global |
-| `versao11*` | `LSTM multitarefa com filtro por state e remocao de features vazias` | `0.9213` | `0.9155` | `0.9225` | ablacao de pre-processamento; ficou abaixo da `versao10` |
-| `versao11*` | `RandomForest` | `0.9888` | `0.9833` | `0.9750` | baseline continuou superior na rodada documentada |
+| `versao11*` | `LSTM multitarefa com filtro por state e remocao de features vazias` | `1.0000` | `1.0000` | `1.0000` | execucao correta, mas em tarefa reduzida a `0` e `8` |
+| `versao11*` | `RandomForest` | `1.0000` | `1.0000` | `1.0000` | baseline perfeita na mesma tarefa reduzida |
+| `versao11*` | `LGBM` | `1.0000` | `1.0000` | `1.0000` | baseline perfeita na mesma tarefa reduzida |
+| `versao11*` | `XGBoost` | `0.9891` | `0.8972` | `0.9944` | unica baseline que ainda errou uma amostra no teste |
 
-`*` Os numeros da `versao11` acima correspondem a uma rodada exploratoria documentada em `versao11/readme-versao11.md` e nos outputs salvos dos notebooks. Nos artefatos atuais de pre-processamento da `versao11`, o filtro por `state` manteve `605` series de `2228` e deixou apenas as classes `0` e `8`, de modo que uma nova rodada completa de treino seria necessaria para uma comparacao final plenamente consistente com as versoes anteriores.
+`*` Na execucao atual da `versao11`, o filtro por `state` manteve `605` series de `2228` e deixou apenas as classes `0` e `8`. Por isso, os resultados sao internamente corretos, mas nao sao diretamente comparaveis com a tarefa multiclasse mais ampla das versoes anteriores.
 
 ### Configuracao dos modelos de classificacao
 
@@ -188,9 +190,10 @@ Gaps centrais da `versao10`:
 
 Leitura da `versao11`:
 
-- na rodada exploratoria documentada, houve perda de `0.0160` em `accuracy`, `0.0253` em `macro-F1` e `0.0347` em `balanced accuracy` em relacao a `versao10`;
-- nessa mesma rodada, o `RandomForest` ainda abriu `0.0675` em `accuracy`, `0.0678` em `macro-F1` e `0.0525` em `balanced accuracy` sobre a `LSTM` da `versao11`;
-- no estado atual dos artefatos, a `versao11` deve ser lida mais como uma ablacao de pre-processamento do que como substituta direta da `versao10`, porque o filtro preservou apenas as classes `0` e `8`.
+- a execucao atual ficou tecnicamente correta e todos os notebooks rodaram sem erro;
+- foi corrigida uma inconsistencia entre `metrics.json` e `classification_report.csv`, que antes tratavam o conjunto de classes de forma diferente;
+- mesmo com `accuracy = 1.0000` para `LSTM`, `RandomForest` e `LGBM`, esses numeros nao indicam superioridade sobre a `versao10`, porque o filtro por `state` reduziu o problema a apenas duas classes;
+- por isso, a `versao11` deve ser lida como ablacao metodologica e nao como nova melhor versao do projeto.
 
 Classes em que a `versao10` ainda mais sofre frente aos baselines:
 
@@ -217,7 +220,7 @@ Se o criterio for a melhor rede recorrente:
 
 Observacao sobre ranking:
 
-- a `versao11` nao entra no ranking final consolidado porque o estado atual do seu pre-processamento deixou o problema pouco comparavel com as versoes multiclasse anteriores; na rodada exploratoria documentada, ela ficaria abaixo da `versao10`, da `versao9` e da `versao6`.
+- a `versao11` nao entra no ranking final consolidado porque o estado atual do seu pre-processamento deixou o problema pouco comparavel com as versoes multiclasse anteriores.
 
 ## Conclusao geral
 

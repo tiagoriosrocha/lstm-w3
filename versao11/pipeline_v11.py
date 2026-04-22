@@ -48,7 +48,6 @@ MultiTaskTrainingSummary = v10.MultiTaskTrainingSummary
 
 build_metrics_table = v10.build_metrics_table
 discover_series_manifest = v10.discover_series_manifest
-evaluate_predictions = v10.evaluate_predictions
 export_evaluation_artifacts = v10.export_evaluation_artifacts
 fit_lgbm_baseline = v10.fit_lgbm_baseline
 fit_random_forest_baseline = v10.fit_random_forest_baseline
@@ -73,6 +72,24 @@ def _require_dataframe_stack() -> None:
             "pandas nao esta instalado neste ambiente. "
             "Instale as dependencias do projeto para executar a versao11."
         )
+
+
+def evaluate_predictions(
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+    class_labels: list[int] | None = None,
+) -> dict[str, object]:
+    y_true_arr = np.asarray(y_true, dtype=np.int64)
+    y_pred_arr = np.asarray(y_pred, dtype=np.int64)
+    observed_labels = sorted(np.unique(np.concatenate([y_true_arr, y_pred_arr])).tolist())
+    if class_labels is None:
+        effective_labels = observed_labels
+    else:
+        observed_set = set(observed_labels)
+        effective_labels = [int(label) for label in class_labels if int(label) in observed_set]
+        if not effective_labels:
+            effective_labels = observed_labels
+    return v10.evaluate_predictions(y_true_arr, y_pred_arr, class_labels=effective_labels)
 
 
 def _training_state_phase_from_value(value: object) -> int:
