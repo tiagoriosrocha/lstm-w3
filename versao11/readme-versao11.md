@@ -1,58 +1,83 @@
 # Versao 11
 
-A `versao11` preserva a arquitetura multitarefa da `versao10`, mas muda deliberadamente o pre-processamento. O objetivo desta versao e testar se vale a pena treinar as classes de falha apenas com trechos em que o `state` ja esta em fase transiente ou de falha, alem de remover features totalmente vazias.
+A `versao11` preserva a arquitetura multitarefa da `versao10`, mas corrige a hipotese de pre-processamento. O ponto central desta revisao e simples: no `3W`, `class` e `state` nao significam a mesma coisa, entao o recorte do treino nao deve usar `state` como se ele fosse o rotulo do evento.
 
-## O que a versao11 propoe
+## Correcao conceitual
 
-- remocao das features totalmente vazias: `ABER-CKGL`, `ABER-CKP`, `P-JUS-BS`, `P-JUS-CKP`, `P-MON-CKGL`, `P-MON-SDV-P`, `PT-P`, `QBS`, `T-MON-CKP`;
-- reducao das entradas de `27` para `18` variaveis e de `243` para `162` atributos tabulares;
-- recorte por `state` no treino das classes globais `1..9`, mantendo apenas `1 = transiente` e `2 = falha`;
-- manutencao da serie completa para a classe `0`;
-- mesma arquitetura multitarefa da `versao10`.
+No `3W`, cada observacao pode carregar dois rotulos diferentes:
 
-## Execucao atual
+- `class`: identifica o evento observado naquele instante;
+- `state`: identifica o estado operacional do poco naquele instante.
 
-Os quatro notebooks da `versao11` executaram sem erro.
+Em termos práticos:
 
-Durante a auditoria dos resultados, foi corrigida uma inconsistencia na exportacao de avaliacao: antes, os arquivos `metrics.json` eram calculados sobre as classes presentes, mas o `classification_report.csv` ainda listava tambem classes ausentes. Agora os dois artefatos usam o mesmo conjunto efetivo de classes observado na avaliacao.
+- `class = 0` significa operacao normal;
+- `class = 1..9` significa algum evento indesejado;
+- `class = 101..109` representa fase transitoria de eventos;
+- `state` nao diz qual evento ocorreu; ele descreve o modo operacional do poco.
 
-## O que aconteceu com a base
+Esse foi o mal-entendido corrigido nesta versao. O recorte antigo por `state` acabava removendo series inteiras por interpretar `state` como se fosse o proprio rotulo de falha. A leitura correta e: quem distingue normal, falha e transiente em nivel observacional e o `class`.
 
-Com a regra atual de filtro por `state`, a `versao11` ficou muito mais restritiva do que as versoes anteriores:
+## O Que a Versao 11 Passa a Fazer
+
+- remove as features totalmente vazias: `ABER-CKGL`, `ABER-CKP`, `P-JUS-BS`, `P-JUS-CKP`, `P-MON-CKGL`, `P-MON-SDV-P`, `PT-P`, `QBS`, `T-MON-CKP`;
+- reduz as entradas de `27` para `18` variaveis e de `243` para `162` atributos tabulares;
+- mantem todas as series no `split`, sem descartar series inteiras por `state`;
+- no treino das classes globais `1..9`, tenta manter apenas observacoes cujo `class` observacional indica evento ou transiente, isto e, `1..9` ou `101..109`;
+- preserva a serie completa da classe global `0`, para que o modelo continue vendo exemplos normais no treino;
+- se uma serie de falha ficaria vazia apos remover observacoes com `class = 0`, o pipeline faz `fallback` para a serie completa, evitando perder cobertura daquela classe;
+- mantem a mesma arquitetura multitarefa da `versao10`.
+
+## O Que Mudou no Pre-processamento
+
+Com a regra corrigida:
 
 - series originais: `2228`
-- series mantidas: `605`
-- series descartadas por `no_negative_state_segment`: `1623`
-- `split`: `train = 423`, `validation = 90`, `test = 92`
-- classes sobreviventes: apenas `0` e `8`
+- series mantidas para `split`: `2228`
+- series descartadas por filtro de `state`: `0`
+- `split`: `train = 1559`, `validation = 334`, `test = 335`
+- classes globais preservadas no problema: `0..9`
 
-Isso muda bastante a interpretacao do experimento. Na pratica, a execucao atual da `versao11` deixou de representar o problema multiclasse amplo das versoes `6` a `10` e passou a ser uma tarefa reduzida, dominada pelas classes `0` e `8`.
+No treino:
 
-## Resultados atuais
+- `1143` series de falha pedem recorte observacional por `class`;
+- `1112` conseguem usar apenas observacoes com `class != 0`;
+- `31` precisam de `fallback` para a serie completa porque ficariam vazias apos o recorte;
+- todas essas series com `fallback` pertencem a classe global `9`.
 
-`LSTM multitarefa v11`
+## Como Ler o Novo Relatorio
 
-- validacao: `accuracy = 1.0000`, `macro-F1 = 1.0000`, `balanced accuracy = 1.0000`
-- teste: `accuracy = 1.0000`, `macro-F1 = 1.0000`, `balanced accuracy = 1.0000`
+O arquivo `series_quality_report.csv` agora deve ser lido assim:
 
-Baselines em teste:
+- `n_observation_class_zero_rows`: quantas observacoes da serie estao com `class = 0`;
+- `n_observation_class_fault_rows`: quantas observacoes estao em `class = 1..9`;
+- `n_observation_class_transient_rows`: quantas observacoes estao em classes transitorias;
+- `n_observation_class_focus_rows`: quantas observacoes podem ser mantidas no foco de treino da `v11`.
 
-- `RandomForest`: `accuracy = 1.0000`, `macro-F1 = 1.0000`, `balanced accuracy = 1.0000`
-- `LGBM`: `accuracy = 1.0000`, `macro-F1 = 1.0000`, `balanced accuracy = 1.0000`
-- `XGBoost`: `accuracy = 0.9891`, `macro-F1 = 0.8972`, `balanced accuracy = 0.9944`
+As colunas derivadas de `state` continuam aparecendo no relatorio como metadado descritivo, mas deixaram de ser o criterio de corte desta versao.
 
-## Leitura metodologica
+## Leitura Metodologica
 
-Esses numeros perfeitos nao significam que a `versao11` superou a `versao10` no problema original. Eles significam que, com o filtro por `state` implementado do jeito atual, a tarefa ficou muito mais facil e muito menos abrangente.
+Depois desta correcao, a `versao11` deixa de ser a ablacao "segmentos negativos por `state`" e passa a ser uma ablacao "foco por `class` observacional". Isso e muito mais coerente com o significado real dos rotulos do `3W`.
+
+Em outras palavras:
+
+- `class` responde "qual evento esta acontecendo?";
+- `state` responde "em que modo operacional o poco esta?".
+
+Logo, se a intencao e remover trechos normais e manter trechos ligados a falhas ou transientes, o recorte correto deve usar `class`, nao `state`.
+
+## Status dos Resultados
+
+Os resultados perfeitos documentados anteriormente para a `versao11` pertenciam a configuracao antiga, baseada em filtro por `state`. Eles nao representam mais a configuracao atual.
 
 Portanto:
 
-- a execucao esta tecnicamente correta;
-- os artefatos agora estao consistentes entre `metrics.json` e `classification_report.csv`;
-- mas a `versao11`, no estado atual, nao deve ser tratada como nova melhor rede recorrente do projeto;
-- a melhor comparacao multiclasse ainda continua sendo a `versao10`.
+- o pre-processamento da `versao11` foi corrigido;
+- o codigo, o `split` e o relatorio de preparo agora refletem a interpretacao correta de `class` e `state`;
+- as metricas finais da `LSTM` e das baselines precisam ser recalculadas com os notebooks `3` e `4`.
 
-## Sequencia recomendada
+## Sequencia Recomendada
 
 - `1-visao-geral-dos-dados.ipynb`
 - `2-pre-processamento.ipynb`

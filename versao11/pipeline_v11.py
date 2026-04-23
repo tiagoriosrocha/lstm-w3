@@ -23,6 +23,9 @@ CONTINUOUS_SENSOR_COLUMNS = v10.CONTINUOUS_SENSOR_COLUMNS
 OBSERVATION_CLASS_CODES = v10.OBSERVATION_CLASS_CODES
 OBSERVATION_STATE_CODES = v10.OBSERVATION_STATE_CODES
 SOURCE_TYPE_MAPPING = v10.SOURCE_TYPE_MAPPING
+BASE_OBSERVATION_FAULT_CLASS_CODES = [code for code in OBSERVATION_CLASS_CODES if 1 <= int(code) <= 9]
+TRANSIENT_OBSERVATION_CLASS_CODES = [code for code in OBSERVATION_CLASS_CODES if int(code) >= 100]
+TRAINING_FOCUS_OBSERVATION_CLASS_CODES = [code for code in OBSERVATION_CLASS_CODES if int(code) != 0]
 ALL_NULL_FEATURE_COLUMNS = [
     "ABER-CKGL",
     "ABER-CKP",
@@ -113,6 +116,24 @@ def _map_training_state_phases(values: np.ndarray) -> np.ndarray:
     return np.asarray(mapped, dtype=np.int64)
 
 
+def _observation_class_code_from_value(value: object) -> int:
+    if pd is not None and pd.isna(value):
+        return IGNORE_INDEX
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return IGNORE_INDEX
+
+
+def _build_training_observation_class_mask(values: np.ndarray) -> np.ndarray:
+    focus_codes = set(TRAINING_FOCUS_OBSERVATION_CLASS_CODES)
+    mapped = [
+        _observation_class_code_from_value(value) in focus_codes
+        for value in np.asarray(values, dtype=object)
+    ]
+    return np.asarray(mapped, dtype=bool)
+
+
 def _compute_feature_nan_ratio(
     frame: pd.DataFrame,
     *,
@@ -158,6 +179,13 @@ def build_series_quality_report(
     for _, row in manifest.iterrows():
         frame = v10._prepare_raw_frame(row["file_path"])
         state_phases = _map_training_state_phases(frame["state"].to_numpy())
+        observation_class_codes = np.asarray(
+            [
+                _observation_class_code_from_value(value)
+                for value in frame["class"].to_numpy(dtype=object)
+            ],
+            dtype=np.int64,
+        )
 
         nan_ratio = _compute_feature_nan_ratio(frame)
         n_rows_original = int(len(frame))
@@ -165,12 +193,19 @@ def build_series_quality_report(
         n_transient_rows = int((state_phases == 1).sum())
         n_failure_rows = int((state_phases == 2).sum())
         n_negative_rows = int(np.isin(state_phases, [1, 2]).sum())
+        n_observation_class_zero_rows = int((observation_class_codes == 0).sum())
+        n_observation_class_fault_rows = int(
+            np.isin(observation_class_codes, BASE_OBSERVATION_FAULT_CLASS_CODES).sum()
+        )
+        n_observation_class_transient_rows = int(
+            np.isin(observation_class_codes, TRANSIENT_OBSERVATION_CLASS_CODES).sum()
+        )
+        n_observation_class_focus_rows = int(
+            np.isin(observation_class_codes, TRAINING_FOCUS_OBSERVATION_CLASS_CODES).sum()
+        )
 
         keep_for_v11 = True
         drop_reason = ""
-        if int(row["class_label_int"]) != 0 and n_negative_rows == 0:
-            keep_for_v11 = False
-            drop_reason = "no_negative_state_segment"
 
         rows.append(
             {
@@ -184,6 +219,10 @@ def build_series_quality_report(
                 "n_state_transient_rows": n_transient_rows,
                 "n_state_failure_rows": n_failure_rows,
                 "n_negative_state_rows": n_negative_rows,
+                "n_observation_class_zero_rows": n_observation_class_zero_rows,
+                "n_observation_class_fault_rows": n_observation_class_fault_rows,
+                "n_observation_class_transient_rows": n_observation_class_transient_rows,
+                "n_observation_class_focus_rows": n_observation_class_focus_rows,
                 "keep_for_v11": bool(keep_for_v11),
                 "drop_reason": drop_reason,
             }
@@ -246,28 +285,38 @@ def _prepare_frame_for_split(
     nan_ratio = _compute_feature_nan_ratio(frame)
     n_rows_original = int(len(frame))
 
-    negative_only_applied = str(split_name) == "train" and int(global_class_label) != 0
+    training_focus_requested = str(split_name) == "train" and int(global_class_label) != 0
+    training_focus_applied = False
+    training_focus_fallback_reason = ""
     n_rows_removed_for_training_focus = 0
 
-    if negative_only_applied:
-        state_phases = _map_training_state_phases(frame["state"].to_numpy())
-        keep_mask = np.isin(state_phases, [1, 2])
+    if training_focus_requested:
+        keep_mask = _build_training_observation_class_mask(frame["class"].to_numpy())
         filtered_frame = frame.loc[keep_mask].reset_index(drop=True)
-        n_rows_removed_for_training_focus = int(n_rows_original - len(filtered_frame))
         if filtered_frame.empty:
-            raise ValueError(
-                "A serie ficou vazia apos remover estados ausentes/normal no treino. "
-                f"Arquivo: {file_path}"
-            )
-        frame = filtered_frame
+            training_focus_fallback_reason = "empty_after_observation_class_filter"
+        else:
+            n_rows_removed_for_training_focus = int(n_rows_original - len(filtered_frame))
+            frame = filtered_frame
+            training_focus_applied = True
+
+    if training_focus_applied:
+        preprocessing_mode = "observation_class_nonzero_only_for_fault_train"
+    elif training_focus_fallback_reason:
+        preprocessing_mode = "full_series_fallback_empty_after_class_filter"
+    else:
+        preprocessing_mode = "full_series"
 
     metadata = {
         "nan_ratio_selected_features": float(nan_ratio),
         "n_rows_original": n_rows_original,
         "n_rows_used": int(len(frame)),
         "n_rows_removed_for_training_focus": int(n_rows_removed_for_training_focus),
-        "negative_only_applied": bool(negative_only_applied),
-        "preprocessing_mode": "state_negative_only_for_fault_train" if negative_only_applied else "full_series",
+        "training_focus_requested": bool(training_focus_requested),
+        "training_focus_applied": bool(training_focus_applied),
+        "training_focus_fallback_reason": str(training_focus_fallback_reason),
+        "negative_only_applied": bool(training_focus_applied),
+        "preprocessing_mode": preprocessing_mode,
     }
     return frame, metadata
 
@@ -498,6 +547,7 @@ def prepare_classification_artifacts(
                 "nan_ratio_selected_features",
                 "n_rows_original",
                 "n_negative_state_rows",
+                "n_observation_class_focus_rows",
                 "keep_for_v11",
                 "drop_reason",
             ]
