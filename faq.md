@@ -137,7 +137,7 @@ A `versao6` reformulou o problema para classificacao multiclasse de series tempo
 A `versao7` testou uma `LSTM` mais profunda para verificar se maior capacidade recorrente reduziria o gap para as baselines tabulares.
 
 **41. Qual foi a principal conclusao atual do projeto?**  
-O melhor modelo do projeto continua sendo a baseline tabular com `RandomForest`. Entre as redes recorrentes, a melhor continua sendo a `versao10`. A `versao11` funcionou como uma ablacao de pre-processamento e, na rodada exploratoria documentada, nao superou a `versao10`.
+O melhor modelo do projeto continua sendo a baseline tabular com `RandomForest`. Entre as redes recorrentes, a melhor continua sendo a `versao10`. A `versao11` foi reexecutada com foco por `class` observacional, preservou as `10` classes, mas ainda ficou abaixo da `versao10` e das baselines.
 
 ## 4. Pre-processamento e Representacao dos Dados
 
@@ -653,7 +653,7 @@ Mostrou que aproveitar melhor a estrutura do dataset gera ganho real, e que o ca
 ## 15. Perguntas Sobre A Versao 11
 
 **199. Qual foi a ideia central da versao 11?**  
-Manter a arquitetura multitarefa da `versao10`, mas mudar o pre-processamento para testar uma hipotese mais especifica: remover features totalmente vazias e treinar as classes de falha usando apenas trechos com `state` transiente ou de falha.
+Manter a arquitetura multitarefa da `versao10`, mas mudar o pre-processamento para testar uma hipotese mais especifica: remover features totalmente vazias e treinar as classes de falha usando principalmente observacoes cujo `class` local indica falha ou transiente.
 
 **200. Quais features foram removidas na versao 11 por estarem totalmente vazias?**  
 `ABER-CKGL`, `ABER-CKP`, `P-JUS-BS`, `P-JUS-CKP`, `P-MON-CKGL`, `P-MON-SDV-P`, `PT-P`, `QBS` e `T-MON-CKP`.
@@ -662,16 +662,16 @@ Manter a arquitetura multitarefa da `versao10`, mas mudar o pre-processamento pa
 Ficaram `18` colunas para `X_seq` e `162` atributos tabulares em `X_tab`, porque sao `18` colunas multiplicadas por `9` estatisticas por coluna.
 
 **202. O que o pre-processamento atual da versao 11 fez com a base?**  
-Nos artefatos atuais, de `2228` series originais, `605` foram mantidas. O `split` ficou em `423` series de treino, `90` de validacao e `92` de teste. Com a regra atual, sobreviveram apenas as classes `0` e `8`.
+Nos artefatos atuais de referencia, as `2228` series foram mantidas no problema. O `split` ficou em `1559` series de treino, `334` de validacao e `335` de teste, preservando as classes `0` a `9`.
 
 **203. Por que isso exige cuidado ao interpretar a versao 11?**  
-Porque, nesse estado atual, a `versao11` deixou de ser diretamente comparavel ao problema multiclasse mais amplo das versoes anteriores. Na pratica, os artefatos atuais ficaram muito mais proximos de um problema reduzido do que da tarefa original de `10` classes.
+Porque existem dois conjuntos de artefatos da `versao11`. O mais antigo, baseado em filtro por `state`, reduziu a avaliacao pratica a `0` e `8`. O mais recente, baseado em `class` observacional, e o que deve ser usado para comparacao com as versoes anteriores.
 
 **204. Quais sao os resultados atuais da versao 11?**  
-Na execucao atual, a `LSTM` da `versao11` ficou com `accuracy = 1.0000`, `macro-F1 = 1.0000` e `balanced accuracy = 1.0000` tanto em validacao quanto em teste. No mesmo teste, `RandomForest` e `LGBM` tambem ficaram com `1.0000`, enquanto o `XGBoost` ficou com `accuracy = 0.9891`, `macro-F1 = 0.8972` e `balanced accuracy = 0.9944`.
+No teste de `classificacao_v11_foco_por_class_observacional`, a `LSTM` ficou com `accuracy = 0.9194`, `macro-F1 = 0.9118` e `balanced accuracy = 0.9238`. No mesmo teste, `RandomForest` ficou com `0.9851`, `0.9812` e `0.9752`; `LGBM` com `0.9791`, `0.9798` e `0.9714`; e `XGBoost` com `0.9821`, `0.9850` e `0.9814`.
 
 **205. Isso quer dizer que a versao 11 virou a melhor versao do projeto?**  
-Nao. Esses resultados perfeitos aconteceram porque o pre-processamento atual preservou apenas as classes `0` e `8`. Entao a tarefa ficou muito mais simples e deixou de ser diretamente comparavel ao problema multiclasse mais amplo das versoes anteriores.
+Nao. Na execucao mais recente, a `versao11` e comparavel com a tarefa multiclasse completa, mas ainda ficou abaixo da `versao10` entre as redes recorrentes e abaixo das baselines tabulares.
 
 **206. Qual e a leitura metodologica mais honesta sobre a versao 11?**  
-Que ela foi util como experimento de ablacao e mostrou a alta sensibilidade do projeto ao pre-processamento. A execucao atual esta tecnicamente correta, mas o filtro por `state` ficou tao severo que a `versao11` deve ser interpretada como uma tarefa reduzida, e nao como substituta direta da `versao10`.
+Que ela foi util como experimento de ablacao e mostrou a alta sensibilidade do projeto ao pre-processamento. A versao correta para leitura atual e a de foco por `class` observacional: ela e conceitualmente melhor que o filtro por `state`, mas nao superou a `versao10`.

@@ -22,7 +22,7 @@ Leitura curta do historico experimental:
 - `versoes7` e `8` mostraram que apenas aprofundar a `LSTM` nao bastava;
 - `versao9` recuperou desempenho com uma `LSTM` hibrida hierarquica;
 - `versao10` foi a melhor rede recorrente do projeto em `macro-F1` e `balanced accuracy`, mas ainda nao superou as baselines tabulares.
-- `versao11` funcionou como uma ablacao de pre-processamento: na rodada exploratoria documentada, piorou em relacao a `versao10`; nos artefatos atuais, o filtro por `state` ficou tao severo que restaram apenas as classes `0` e `8`.
+- `versao11` funcionou como uma ablacao de pre-processamento: a rodada antiga por `state` reduziu o problema a `0` e `8`, mas a execucao mais recente corrigiu isso com foco por `class` observacional e voltou a avaliar as `10` classes.
 
 ## Versoes 1 A 5: Previsao Temporal
 
@@ -79,12 +79,15 @@ Leitura curta do historico experimental:
 | `versao10` | `LSTM multitarefa sensivel a fonte` | `0.9373` | `0.9409` | `0.9572` | melhor rede recorrente do projeto em `macro-F1` e `balanced accuracy` |
 | `versao10` | `RandomForest` | `0.9851` | `0.9811` | `0.9744` | melhor modelo global ainda |
 | `versao10` | `XGBoost` | `0.9791` | `0.9775` | `0.9714` | segunda melhor baseline global |
-| `versao11*` | `LSTM multitarefa com filtro por state e remocao de features vazias` | `1.0000` | `1.0000` | `1.0000` | execucao correta, mas em tarefa reduzida a `0` e `8` |
-| `versao11*` | `RandomForest` | `1.0000` | `1.0000` | `1.0000` | baseline perfeita na mesma tarefa reduzida |
-| `versao11*` | `LGBM` | `1.0000` | `1.0000` | `1.0000` | baseline perfeita na mesma tarefa reduzida |
-| `versao11*` | `XGBoost` | `0.9891` | `0.8972` | `0.9944` | unica baseline que ainda errou uma amostra no teste |
+| `versao11` | `LSTM multitarefa com foco por class observacional` | `0.9194` | `0.9118` | `0.9238` | ablacao valida, mas abaixo da `versao10` |
+| `versao11` | `RandomForest` | `0.9851` | `0.9812` | `0.9752` | melhor `accuracy` da `versao11` |
+| `versao11` | `LGBM` | `0.9791` | `0.9798` | `0.9714` | baseline forte e estavel |
+| `versao11` | `XGBoost` | `0.9821` | `0.9850` | `0.9814` | melhor baseline da `versao11` em `macro-F1` e `balanced accuracy` |
 
-`*` Na execucao atual da `versao11`, o filtro por `state` manteve `605` series de `2228` e deixou apenas as classes `0` e `8`. Por isso, os resultados sao internamente corretos, mas nao sao diretamente comparaveis com a tarefa multiclasse mais ampla das versoes anteriores.
+Observacao importante:
+
+- os numeros acima correspondem a `artifacts/reports_v11/classificacao_v11_foco_por_class_observacional/`;
+- o diretorio `classificacao_v11_segmentos_negativos/` permanece apenas como registro de uma rodada anterior, baseada em filtro por `state`, que reduziu a avaliacao pratica as classes `0` e `8`.
 
 ### Configuracao dos modelos de classificacao
 
@@ -164,9 +167,11 @@ Leitura curta do historico experimental:
 - remocao de `9` features totalmente vazias: `ABER-CKGL`, `ABER-CKP`, `P-JUS-BS`, `P-JUS-CKP`, `P-MON-CKGL`, `P-MON-SDV-P`, `PT-P`, `QBS`, `T-MON-CKP`
 - `input_size = 18`
 - `tabular_size = 162`
-- no treino das classes de falha, manutencao apenas de observacoes com `state = 1` ou `state = 2`
-- nos artefatos atuais, o filtro preservou `605` series de `2228`, com `423` no treino, `90` na validacao e `92` no teste
-- com a regra atual, sobreviveram apenas as classes `0` e `8`, o que torna a comparacao final com as versoes anteriores dependente de uma nova rodada de treino
+- `sequence_length = 180`
+- no treino das classes de falha, manutencao apenas de observacoes cujo `class` local indica falha ou transiente
+- `split` preservado com `2228` series: `1559` treino, `334` validacao e `335` teste
+- classes preservadas no problema: `0..9`
+- os artefatos antigos de `segmentos_negativos` seguem apenas como referencia historica, nao como resultado principal
 
 ### Leitura comparativa final da classificacao
 
@@ -179,7 +184,7 @@ Pontos mais importantes:
 - a `versao8` teve a mesma performance da `versao7`, mas tornou o experimento mais auditavel;
 - a `versao9` melhorou bastante a rede recorrente com uma leitura hierarquica por janelas;
 - a `versao10` foi a melhor rede recorrente do projeto em `macro-F1` e `balanced accuracy`.
-- a `versao11`, na rodada exploratoria documentada, nao confirmou ganho sobre a `versao10` e reforcou o quanto o problema e sensivel ao pre-processamento.
+- a `versao11` confirmou que o problema e muito sensivel ao pre-processamento: a leitura por `class` observacional e conceitualmente melhor, mas nao trouxe ganho final sobre a `versao10`.
 
 Gaps centrais da `versao10`:
 
@@ -190,10 +195,11 @@ Gaps centrais da `versao10`:
 
 Leitura da `versao11`:
 
-- a execucao atual ficou tecnicamente correta e todos os notebooks rodaram sem erro;
-- foi corrigida uma inconsistencia entre `metrics.json` e `classification_report.csv`, que antes tratavam o conjunto de classes de forma diferente;
-- mesmo com `accuracy = 1.0000` para `LSTM`, `RandomForest` e `LGBM`, esses numeros nao indicam superioridade sobre a `versao10`, porque o filtro por `state` reduziu o problema a apenas duas classes;
-- por isso, a `versao11` deve ser lida como ablacao metodologica e nao como nova melhor versao do projeto.
+- a execucao mais recente ficou tecnicamente correta e todos os notebooks rodaram sem erro;
+- a documentacao agora deve tomar como referencia `classificacao_v11_foco_por_class_observacional`, nao `segmentos_negativos`;
+- a `LSTM` da `versao11` ficou `0.0179` abaixo da `versao10` em `accuracy`, `0.0291` abaixo em `macro-F1` e `0.0334` abaixo em `balanced accuracy`;
+- as baselines continuaram fortes: na propria `versao11`, o `RandomForest` abriu `0.0657` de `accuracy` sobre a `LSTM`, e o `XGBoost` abriu `0.0731` de `macro-F1`;
+- por isso, a `versao11` deve ser lida como ablacao metodologica util, mas nao como nova melhor versao do projeto.
 
 Classes em que a `versao10` ainda mais sofre frente aos baselines:
 
@@ -220,7 +226,7 @@ Se o criterio for a melhor rede recorrente:
 
 Observacao sobre ranking:
 
-- a `versao11` nao entra no ranking final consolidado porque o estado atual do seu pre-processamento deixou o problema pouco comparavel com as versoes multiclasse anteriores.
+- a `versao11` entra como ablacao comparavel, mas nao altera o ranking final porque ficou abaixo da `versao10` e das baselines.
 
 ## Conclusao geral
 
@@ -233,6 +239,6 @@ A principal contribuicao cientifica das ultimas iteracoes foi mostrar que:
 
 - o ganho da `versao10` nao veio de apenas aumentar profundidade;
 - o ganho veio de usar melhor a estrutura do dataset, incluindo `27` variaveis, mascaras operacionais, contexto de fonte e supervisao temporal auxiliar.
-- a `versao11` reforcou, por contraste, que mudar o pre-processamento pode alterar drasticamente o espaco efetivo do problema e precisa ser tratado com muito cuidado.
+- a `versao11` reforcou, por contraste, que mudar o pre-processamento pode alterar bastante o desempenho final e precisa ser tratado com muito cuidado.
 
 Isso nao foi suficiente para derrotar o `RandomForest`, mas foi suficiente para produzir a melhor `LSTM` do projeto.
