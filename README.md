@@ -13,7 +13,7 @@ A ideia central do repositorio e simples:
 
 ## Estado atual do projeto
 
-Hoje, o foco mais relevante esta nas versoes `6`, `7`, `8`, `9`, `10` e `11`, todas voltadas para classificacao das classes `0` a `9` do `3W`.
+Hoje, o foco mais relevante esta nas versoes `6`, `7`, `8`, `9`, `10`, `11`, `12` e `13`, todas voltadas para classificacao das classes `0` a `9` do `3W`.
 
 Resumo dos resultados mais importantes em teste:
 
@@ -40,6 +40,8 @@ Conclusao atual:
 - em relacao a melhor `LSTM` anterior da `versao6`, a `versao10` perdeu pouco em `accuracy`, mas virou a melhor rede recorrente do projeto em `macro-F1` e `balanced accuracy`;
 - a `versao11` atual corrigiu o recorte observacional e voltou a preservar as `10` classes do problema;
 - mesmo com essa correcao, a `versao11` ficou abaixo da `versao10` em `accuracy`, `macro-F1` e `balanced accuracy`;
+- a `versao12` foi criada como sintese arquitetural de `versao7`, `versao9`, `versao10` e `versao11`, mas ainda nao possui metricas consolidadas;
+- a `versao13` adapta uma arquitetura `BiGRU + Multi-Head Attention` ao protocolo mais estavel do projeto, com metricas ainda pendentes;
 - o melhor modelo global continua sendo a baseline tabular, especialmente o `RandomForest`.
 
 ## Estrutura do repositorio
@@ -70,6 +72,10 @@ Conclusao atual:
   proposta de `LSTM` multitarefa e sensivel a fonte, incorporando `27` variaveis, rotulos por observacao e mascaras operacionais.
 - `versao11/`
   ablacao de pre-processamento sobre a `versao10`, removendo `9` features totalmente vazias e focando o treino das classes `1..9` nas observacoes cujo `class` indica falha ou transiente.
+- `versao12/`
+  fusao arquitetural entre profundidade alta, hierarquia temporal, separacao de variaveis, `X_tab`, mascaras operacionais, embedding de contexto e multitarefa.
+- `versao13/`
+  experimento com `BiGRU + Multi-Head Attention`, entrada univariada por timestep e comparacao direta com as baselines tabulares.
 
 ## Como executar
 
@@ -122,6 +128,20 @@ ou
 - `versao11/3-classificacao-multiclasse-lstm-multitarefa.ipynb`
 - `versao11/4-comparacao-lstm-multitarefa-vs-baselines.ipynb`
 
+ou
+
+- `versao12/1-visao-geral-dos-dados.ipynb`
+- `versao12/2-pre-processamento.ipynb`
+- `versao12/3-classificacao-multiclasse-lstm-multitarefa.ipynb`
+- `versao12/4-comparacao-lstm-multitarefa-vs-baselines.ipynb`
+
+ou
+
+- `versao13/1-visao-geral-dos-dados.ipynb`
+- `versao13/2-pre-processamento.ipynb`
+- `versao13/3-classificacao-multiclasse-bigru-mha.ipynb`
+- `versao13/4-comparacao-bigru-mha-vs-baselines.ipynb`
+
 ## Onde estao os resultados mais recentes
 
 Os artefatos usados nas analises atuais estao em:
@@ -171,5 +191,66 @@ Alguns pontos importantes do historico experimental:
 - [versao9/readme-versao9.md](versao9/readme-versao9.md)
 - [versao10/readme-versao10.md](versao10/readme-versao10.md)
 - [versao11/readme-versao11.md](versao11/readme-versao11.md)
+- [versao12/readme-versao12.md](versao12/readme-versao12.md)
+- [versao13/readme-versao13.md](versao13/readme-versao13.md)
 - [result.md](result.md)
 - [faq.md](faq.md)
+
+## Tabela Comparativa Geral
+
+| Versão | Tipo de modelo | Ideia central | Como trata o tempo | Uso de `X_tab` | Complexidade | Principal ganho | Principal limitação |
+|--------|----------------|---------------|--------------------|----------------|--------------|------------------|----------------------|
+| **v6** | LSTM básica | Baseline sequencial | Sequência inteira (flat) | x | Baixa | Simples e estável | Perde informação interna da sequência |
+| **v7** | LSTM profunda | Aumentar capacidade | Sequência inteira | x | Média | Mais expressiva | Não melhora desempenho |
+| **v8** | LSTM profunda (explicada) | Reprodutibilidade | Sequência inteira | x | Média | Transparência metodológica | Mesmo resultado da v7 |
+| **v9** | LSTM hierárquica híbrida | Estruturar o problema | Janelas + contexto | v | Alta | Melhor modelagem temporal | Ainda depende da LSTM |
+| **v10** | LSTM multitarefa + contexto | Usar toda informação disponível | Sequência + supervisão temporal | v | Muito alta | Melhor LSTM do projeto | Alta complexidade |
+| **v11** | Ablation da v10 | Validar pré-processamento | Igual v10 | v | Muito alta | Insight científico | Performance inferior à v10 |
+| **v12** | LSTM profunda hierárquica multitarefa | Juntar os melhores blocos anteriores | Janelas + contexto + supervisão temporal | v | Extremamente alta | Arquitetura mais completa | Métricas ainda pendentes |
+| **v13** | BiGRU + Multi-Head Attention | Simplificar a leitura temporal com atenção explícita | Sequência univariada por timestep | x | Alta | Arquitetura mais direta | Métricas ainda pendentes |
+
+---
+
+## Comparação por Dimensões Arquiteturais
+
+| Dimensão | v6 | v7/8 | v9 | v10 | v11 |
+|----------|----|------|----|-----|-----|
+| Profundidade da LSTM | baixa | alta | média | média | média |
+| Pooling avançado (mean + attention) | x | v | v | v | v |
+| Hierarquia temporal | x | x | v | x | x |
+| Separação de variáveis (contínuo/estado) | x | x | v | x | x |
+| Uso de `X_tab` | x | x | v | v | v |
+| Máscaras (missing/frozen) | x | x | x | v | v |
+| Embedding de contexto (source) | x | x | x | v | v |
+| Multitarefa | x | x | x | v | v |
+
+Leitura para a `v12`:
+ela foi desenhada para reunir todas as dimensoes acima em uma unica rede, marcando profundidade alta, pooling avancado, hierarquia temporal, separacao de variaveis, `X_tab`, mascaras, embedding de contexto e multitarefa.
+
+---
+
+## Evolução Metodológica
+
+| Versão | Interpretação |
+|--------|--------------|
+| **v6** | "Vamos usar LSTM como baseline" |
+| **v7/8** | "Vamos aumentar a capacidade da rede" |
+| **v9** | "Vamos estruturar melhor o problema" |
+| **v10** | "Vamos usar todas as informações disponíveis" |
+| **v11** | "Vamos validar o impacto do pré-processamento" |
+| **v12** | "Vamos combinar os ganhos das melhores versões em uma única arquitetura" |
+
+---
+
+## Interpretação dos Resultados
+
+| Versão | Resultado |
+|--------|----------|
+| **v6** | Melhor LSTM simples |
+| **v7/8** | Não superou v6 → profundidade não resolveu |
+| **v9** | Ganho real com melhor estrutura |
+| **v10** | Melhor LSTM geral |
+| **v11** | Mostra impacto do pré-processamento |
+| **v12** | Implementada e pronta para experimento |
+
+---
